@@ -1,0 +1,342 @@
+<?xml version='1.0' encoding='utf-8'?>
+<interface version="1.1">
+  <object class="ttk.Notebook" id="MainWindow">
+    <property name="height">200</property>
+    <property name="width">200</property>
+    <layout manager="grid">
+      <property name="column">0</property>
+      <property name="propagate">True</property>
+      <property name="row">0</property>
+    </layout>
+    <child>
+      <object class="ttk.Notebook.Tab" id="tab1">
+        <property name="text" translatable="yes">tab1</property>
+        <child>
+          <object class="ttk.Frame" id="frame3">
+            <property name="height">200</property>
+            <property name="width">200</property>
+            <layout manager="grid">
+              <property name="column">0</property>
+              <property name="propagate">True</property>
+              <property name="row">0</property>
+            </layout>
+            <child>
+              <object class="tk.Scale" id="scale_speedall">
+                <property cbtype="scale" name="command" type="command">move_all</property>
+                <property name="from_">-100</property>
+                <property name="label" translatable="yes">Speed</property>
+                <property name="orient">horizontal</property>
+                <property name="to">100</property>
+                <property name="variable">double:scale_speedall_var</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="propagate">True</property>
+                  <property name="row">0</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Button" id="tab1_stopbtn">
+                <property cbtype="simple" name="command" type="command">stopall_butt</property>
+                <property name="text" translatable="yes">STOP ALL</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="propagate">True</property>
+                  <property name="row">1</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="tk.Label" id="label_curr1">
+                <property name="text" translatable="yes">Winch 1 Current</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="propagate">True</property>
+                  <property name="row">2</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="tk.Label" id="curr1_val">
+                <property name="textvariable">string:curr1</property>
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="propagate">True</property>
+                  <property name="row">2</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="tk.Label" id="label_curr2">
+                <property name="text" translatable="yes">Winch 2 Current</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="propagate">True</property>
+                  <property name="row">3</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="tk.Label" id="curr2_val">
+                <property name="textvariable">string:curr2</property>
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="propagate">True</property>
+                  <property name="row">3</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="tk.Label" id="label_curr3">
+                <property name="text" translatable="yes">Winch 3 Current</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="propagate">True</property>
+                  <property name="row">5</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="tk.Label" id="curr3_val">
+                <property name="textvariable">string:curr3</property>
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="propagate">True</property>
+                  <property name="row">5</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="tk.Label" id="label_tilt">
+                <property name="text" translatable="yes">Tilt</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="propagate">True</property>
+                  <property name="row">6</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="tk.Label" id="tilt_val">
+                <property name="textvariable">string:tilt_deg</property>
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="propagate">True</property>
+                  <property name="row">6</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Notebook.Tab" id="tab2">
+        <property name="text" translatable="yes">tab2</property>
+        <child>
+          <object class="ttk.Frame" id="frame4">
+            <property name="height">200</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="propagate">True</property>
+              <property name="side">top</property>
+            </layout>
+            <child>
+              <object class="ttk.Button" id="RaiseSelected">
+                <property cbtype="simple" name="command" type="command">RaiseSelected</property>
+                <property name="text" translatable="yes">RaiseSelected</property>
+                <layout manager="pack">
+                  <property name="propagate">True</property>
+                  <property name="side">top</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Button" id="LowerSelected">
+                <property cbtype="simple" name="command" type="command">LowerSelected</property>
+                <property name="text" translatable="yes">LowerSelected</property>
+                <layout manager="pack">
+                  <property name="propagate">True</property>
+                  <property name="side">top</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="winch1">
+                <property name="cursor">arrow</property>
+                <property name="offvalue">0</property>
+                <property name="onvalue">1</property>
+                <property name="takefocus">false</property>
+                <property name="text" translatable="yes">Winch 1</property>
+                <property name="variable">string:winch1select</property>
+                <layout manager="pack">
+                  <property name="propagate">True</property>
+                  <property name="side">top</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="winch2">
+                <property name="offvalue">0</property>
+                <property name="onvalue">1</property>
+                <property name="text" translatable="yes">Winch 2</property>
+                <property name="variable">string:winch2select</property>
+                <layout manager="pack">
+                  <property name="propagate">True</property>
+                  <property name="side">top</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="winch3">
+                <property name="compound">top</property>
+                <property name="cursor">arrow</property>
+                <property name="offvalue">0</property>
+                <property name="onvalue">1</property>
+                <property name="text" translatable="yes">Winch 3</property>
+                <property name="variable">string:winch3select</property>
+                <layout manager="pack">
+                  <property name="propagate">True</property>
+                  <property name="side">top</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Notebook.Tab" id="tab3">
+        <property name="text" translatable="yes">tab3</property>
+        <child>
+          <object class="ttk.Frame" id="frame5">
+            <property name="height">200</property>
+            <property name="width">200</property>
+            <layout manager="grid">
+              <property name="column">0</property>
+              <property name="columnspan">2</property>
+              <property name="propagate">True</property>
+              <property name="row">0</property>
+              <property name="rowspan">3</property>
+            </layout>
+            <child>
+              <object class="ttk.Scale" id="winch1scale">
+                <property cbtype="scale" name="command" type="command">winch1scale_move</property>
+                <property name="from_">-100</property>
+                <property name="orient">horizontal</property>
+                <property name="to">100</property>
+                <property name="variable">int:winch1_vel</property>
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="propagate">True</property>
+                  <property name="row">0</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Scale" id="winch2scale">
+                <property cbtype="scale" name="command" type="command">winch2scale_move</property>
+                <property name="from_">-100</property>
+                <property name="orient">horizontal</property>
+                <property name="to">100</property>
+                <property name="variable">int:winch2_vel</property>
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="propagate">True</property>
+                  <property name="row">1</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Scale" id="winch3scale">
+                <property cbtype="scale" name="command" type="command">winch3scale_move</property>
+                <property name="from_">-100</property>
+                <property name="orient">horizontal</property>
+                <property name="to">100</property>
+                <property name="variable">int:winch3_vel</property>
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="propagate">True</property>
+                  <property name="row">2</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Label" id="winch1scale_lab">
+                <property name="anchor">n</property>
+                <property name="text" translatable="yes">Winch 1</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="propagate">True</property>
+                  <property name="row">0</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Label" id="winch2scale_lab">
+                <property name="text" translatable="yes">Winch 2</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="propagate">True</property>
+                  <property name="row">1</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Label" id="winch3scale_lab">
+                <property name="text" translatable="yes">Winch 3</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="propagate">True</property>
+                  <property name="row">2</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Label" id="winch1scale_vel">
+                <property name="textvariable">string:winch1_vel</property>
+                <layout manager="grid">
+                  <property name="column">2</property>
+                  <property name="propagate">True</property>
+                  <property name="row">0</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Label" id="winch2scale_vel">
+                <property name="textvariable">string:winch2_vel</property>
+                <layout manager="grid">
+                  <property name="column">2</property>
+                  <property name="propagate">True</property>
+                  <property name="row">1</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Label" id="winch3scale_vel">
+                <property name="textvariable">string:winch3_vel</property>
+                <layout manager="grid">
+                  <property name="column">2</property>
+                  <property name="propagate">True</property>
+                  <property name="row">2</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Button" id="stopbutt">
+                <property cbtype="simple" name="command" type="command">stopall_butt</property>
+                <property name="text" translatable="yes">STOP ALL</property>
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="pady">10</property>
+                  <property name="propagate">True</property>
+                  <property name="row">3</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
