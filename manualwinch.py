@@ -74,8 +74,7 @@ class ManualWinchApp:
         #4: Connect callbacks
         builder.connect_callbacks(self)
 
-        self.ser_add='/dev/ttyACM3'   #For Strain Gauges and IMU
-        self.ser_add2='/dev/ttyACM1'	# for Encoders
+        self.ser_add='/dev/ttyACM0'   #For Strain Gauges and IMU
         self.testCounter=1
 
         self.list_of_floats=[]
@@ -85,17 +84,18 @@ class ManualWinchApp:
         self.y = 0
         self.z = 0
 
-        self.xval1=0
-        self.yval1=0
-        self.buttjpin=0
-        self.butt1pin=0
-        self.butt2pin=0
-        self.butt3pin=0
-        self.str1=0
-        self.str2=0
-        self.str3=0
+        #self.xval1=0
+        #self.yval1=0
+        #self.buttjpin=0
+        #self.butt1pin=0
+        #self.butt2pin=0
+        #self.butt3pin=0
+        #self.str1=0
+        #self.str2=0
+        #self.str3=0
         self.ytilt=0
         self.ztilt=0
+        self.xtilt=0        
 
         self.qw=0
         self.qx=0
@@ -144,15 +144,6 @@ class ManualWinchApp:
 
         self.sv=0
 
-        if self.sv==1:
-            self.str1thresh=10
-            self.str2thresh=10
-            self.str3thresh=10
-        else:
-            self.str1thresh=5
-            self.str2thresh=5
-            self.str3thresh=5
-
         #print([self.str1thresh,self.str2thresh,self.str3thresh])
         #time.sleep(.5)
         # get calibration parameters
@@ -197,6 +188,7 @@ class ManualWinchApp:
         zSpeed.num = 0.0
 
         frame.id = 0x01
+        msgData = ""
         for idx in range(8):
             msgData += chr(xSpeed.hex[idx])
         frame.data = msgData
@@ -204,6 +196,7 @@ class ManualWinchApp:
         pub.publish(frame)
 
         frame.id = 0x02
+        msgData = ""
         for idx in range(8):
             msgData += chr(zSpeed.hex[idx])
         frame.data = msgData
