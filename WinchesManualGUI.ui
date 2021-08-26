@@ -22,7 +22,7 @@
             </layout>
             <child>
               <object class="tk.Scale" id="scale_speedall">
-                <property cbtype="scale" name="command" type="command">move_all</property>
+                <property name="command" cbtype="scale" type="command">move_all</property>
                 <property name="from_">-100</property>
                 <property name="label" translatable="yes">Speed</property>
                 <property name="orient">horizontal</property>
@@ -37,7 +37,7 @@
             </child>
             <child>
               <object class="ttk.Button" id="tab1_stopbtn">
-                <property cbtype="simple" name="command" type="command">stopall_butt</property>
+                <property name="command" cbtype="simple" type="command">stopall_butt</property>
                 <property name="text" translatable="yes">STOP ALL</property>
                 <layout manager="grid">
                   <property name="column">0</property>
@@ -143,7 +143,7 @@
             </layout>
             <child>
               <object class="ttk.Button" id="RaiseSelected">
-                <property cbtype="simple" name="command" type="command">RaiseSelected</property>
+                <property name="command" cbtype="simple" type="command">RaiseSelected</property>
                 <property name="text" translatable="yes">RaiseSelected</property>
                 <layout manager="pack">
                   <property name="propagate">True</property>
@@ -153,7 +153,7 @@
             </child>
             <child>
               <object class="ttk.Button" id="LowerSelected">
-                <property cbtype="simple" name="command" type="command">LowerSelected</property>
+                <property name="command" cbtype="simple" type="command">LowerSelected</property>
                 <property name="text" translatable="yes">LowerSelected</property>
                 <layout manager="pack">
                   <property name="propagate">True</property>
@@ -221,7 +221,7 @@
             </layout>
             <child>
               <object class="ttk.Scale" id="winch1scale">
-                <property cbtype="scale" name="command" type="command">winch1scale_move</property>
+                <property name="command" cbtype="scale" type="command">winch1scale_move</property>
                 <property name="from_">-100</property>
                 <property name="orient">horizontal</property>
                 <property name="to">100</property>
@@ -235,7 +235,7 @@
             </child>
             <child>
               <object class="ttk.Scale" id="winch2scale">
-                <property cbtype="scale" name="command" type="command">winch2scale_move</property>
+                <property name="command" cbtype="scale" type="command">winch2scale_move</property>
                 <property name="from_">-100</property>
                 <property name="orient">horizontal</property>
                 <property name="to">100</property>
@@ -249,7 +249,7 @@
             </child>
             <child>
               <object class="ttk.Scale" id="winch3scale">
-                <property cbtype="scale" name="command" type="command">winch3scale_move</property>
+                <property name="command" cbtype="scale" type="command">winch3scale_move</property>
                 <property name="from_">-100</property>
                 <property name="orient">horizontal</property>
                 <property name="to">100</property>
@@ -324,13 +324,38 @@
             </child>
             <child>
               <object class="ttk.Button" id="stopbutt">
-                <property cbtype="simple" name="command" type="command">stopall_butt</property>
+                <property name="command" cbtype="simple" type="command">stopall_butt</property>
                 <property name="text" translatable="yes">STOP ALL</property>
                 <layout manager="grid">
                   <property name="column">1</property>
                   <property name="pady">10</property>
                   <property name="propagate">True</property>
                   <property name="row">3</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Notebook.Tab" id="tab4">
+        <property name="text" translatable="yes">tab4</property>
+        <child>
+          <object class="ttk.Frame" id="frame1">
+            <property name="height">200</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="propagate">True</property>
+              <property name="side">top</property>
+            </layout>
+            <child>
+              <object class="ttk.Button" id="ReadSerial_butt">
+                <property name="command" type="command" cbtype="simple">ReadSerial_cb</property>
+                <property name="text" translatable="yes">ReadSerial</property>
+                <layout manager="pack">
+                  <property name="propagate">True</property>
+                  <property name="side">top</property>
                 </layout>
               </object>
             </child>

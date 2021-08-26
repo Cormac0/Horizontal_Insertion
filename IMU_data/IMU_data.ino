@@ -9,7 +9,7 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55);
 float ytilt=0.0;
 float ztilt=0.0;
 float xtilt=0.0;
-float w=0.0;
+float qw=0.0;
 float qx=0.0;
 float qy=0.0;
 float qz=0.0;
@@ -22,14 +22,9 @@ int acc_cal=0;
 int mag_cal=0;
 int gyro_cal=0;
 
-char val = 's';
-char rx_byte = 0;
-char rx_byte2=0;
-String readString;
-
 void setup(void) 
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Orientation Sensor Test"); Serial.println("");
   
   /* Initialise the sensor */
@@ -52,7 +47,7 @@ void loop(void)
   bno.getEvent(&event);
 
   imu::Quaternion quat = bno.getQuat();
-  w=quat.w();
+  qw=quat.w();
   qx=quat.y();
   qy=quat.x();
   qz=quat.z();
@@ -95,7 +90,7 @@ void PrintAllData()
   Serial.flush();
   Serial.print(';');
   
-  Serial.print(w, 4);
+  Serial.print(qw, 4);
   Serial.flush();
   Serial.print(';');
   Serial.print(qx, 4);
@@ -133,11 +128,11 @@ void PrintAllData()
   Serial.print(';');
   Serial.flush();
   Serial.print(mag_cal, DEC);
-  Serial.print(';');
+  //Serial.print(';');
   Serial.flush();
 
   
-//  Serial.println(" ");
+  //Serial.println(" ");
 
   //delay(30);
   delay(1000);
