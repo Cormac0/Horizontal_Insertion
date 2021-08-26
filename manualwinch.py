@@ -24,6 +24,7 @@ from OdriveClass import *
 
 # Note that positive velocity values lower winch 1
 MAX_VEL = 100000 # Max. speed for winch in encoder counts per second
+GANTRY_MAX = 2
 
 LIVEPLOTTER = 1
 doCalibrate = 0
@@ -46,17 +47,8 @@ class ManualWinchApp:
     def __init__(self):
 
         # Initalize the gantry:
-        os.system("stty -echo")
-        rospy.init_node('can_send', anonymous=True)
-        pub = rospy.Publisher('sent_messages', msg.Frame, queue_size=100)
-        rate = rospy.Rate(50)
-        xSpeed = numhex64()
-        ySpeed = numhex64()
-        msgData = ""
-        frame = msg.Frame()
-        frame.is_rtr = False
-        frame.is_extended = False
-        frame.dlc = 8
+        self.pub = rospy.Publisher('/sent_messages', msg.Frame, queue_size=100)
+        self.rate = rospy.Rate(50)
 
         #1: Create a builder
         self.builder = builder = pygubu.Builder()
@@ -70,25 +62,16 @@ class ManualWinchApp:
         #4: Connect callbacks
         builder.connect_callbacks(self)
 
-        self.ser_add='/dev/ttyACM2'   #For IMU/Arduino
+        self.ser_add='/dev/ttyACM3'   #For IMU/Arduino
         self.testCounter=1
 
         self.list_of_floats=[]
 
         # Data from gantry crane:
-        self.x = 0
-        self.y = 0
-        self.z = 0
+        self.vx = 0
+        self.vy = 0
+        self.vz = 0
 
-        #self.xval1=0
-        #self.yval1=0
-        #self.buttjpin=0
-        #self.butt1pin=0
-        #self.butt2pin=0
-        #self.butt3pin=0
-        #self.str1=0
-        #self.str2=0
-        #self.str3=0
         self.ytilt=0
         self.ztilt=0
         self.xtilt=0        
@@ -112,6 +95,7 @@ class ManualWinchApp:
         self.accz_thresh_wedgeBreaking=0.5
         self.ytilt_zero=-.81
         self.ztilt_zero=2.87
+        self.xtilt_zero=0
         self.accx_zero=--.133
         self.accy_zero=-.5
         self.accz_zero=10.08
@@ -124,16 +108,6 @@ class ManualWinchApp:
         self.pitch=0
         self.roll=0
 
-        self.psi=0
-
-        self.v4=0.0
-        self.v4_prev=0.0
-        self.mot1spd=0.0
-        self.mot1spd_prev=0.0
-        self.mot2spd=0.0
-        self.mot2spd_prev=0.0
-        self.mot3spd=0.0
-        self.mot3spd_prev=0.0
 
         self.ytiltw=0
         self.ztiltw=0
@@ -174,41 +148,73 @@ class ManualWinchApp:
         odrv1.VelMove(0,0)
         odrv1.VelMove(0,1)
 
-    def get_gantry_coords(self):
-        self.x = 0
-        self.y = 0
-        self.z = 0
+    def move_gantry(self,vx,vy,vz):
+        xSpeed = numhex64()
+        zSpeed = numhex64()
 
-    def move_gantry(self,x,y,z):
-        xSpeed.num = 0.0
-        zSpeed.num = 0.0
+        msgData1 = ""
+        frame1 = msg.Frame()
+        frame1.is_rtr = False
+        frame1.is_extended = False
+        frame1.dlc = 8
 
-        frame.id = 0x01
-        msgData = ""
-        for idx in range(8):
-            msgData += chr(xSpeed.hex[idx])
-        frame.data = msgData
-        frame.header.stamp = rospy.Time.now()
-        pub.publish(frame)
+        msgData2 = ""
+        frame2 = msg.Frame()
+        frame2.is_rtr = False
+        frame2.is_extended = False
+        frame2.dlc = 8
+        xSpeed.num = vx
+        zSpeed.num = vz
 
-        frame.id = 0x02
-        msgData = ""
-        for idx in range(8):
-            msgData += chr(zSpeed.hex[idx])
-        frame.data = msgData
-        frame.header.stamp = rospy.Time.now()
-        pub.publish(frame)
-
-        rospy.loginfo("x: %f rps, y: %f rps", xSpeed.num, zSpeed.num) 
-        
-        rate.sleep()
+        # Odrive speed
+        ySpeed = vy
     
+        frame1.id = 0x01
+        msgData1 = ""
+        for idx in range(8):
+            msgData1 += chr(xSpeed.hex[idx])
+        frame1.data = msgData1
+        frame1.header.stamp = rospy.Time.now()
+        self.pub.publish(frame1)
+
+        frame2.id = 0x02
+        msgData2 = ""
+        for idx in range(8):
+            msgData2 += chr(zSpeed.hex[idx])
+        frame2.data = msgData2
+        frame2.header.stamp = rospy.Time.now()
+        self.pub.publish(frame2)
+
+        des_vel = MAX_VEL*float(ySpeed)/100
+        odrv0.VelMove(des_vel,0)
+
+        self.vx = xSpeed.num
+        self.vy = ySpeed
+        self.vz = zSpeed.num
+
+        rospy.loginfo("x: %f rps, z: %f rps", xSpeed.num, zSpeed.num) 
+        
+        self.rate.sleep()
+    
+        return 0
+
+    def vx_scl_cb(self, vel):
+        vdes = (vel/100)*GANTRY_MAX
+        self.move_gantry(vdes,self.vy,self.vz)
+        return 0
+    
+    def vy_scl_cb(self, vel):
+        vdes = (vel/100)*GANTRY_MAX
+        self.move_gantry(self.vx,vdes,self.vz)
+        return 0
+
+    def vz_scl_cb(self, vel):
+        self.move_gantry(self.vx,self.vy,vdes)
         return 0
 
 ##### ARDUINO SERIAL FUNCS
 
     def ArduinoSetup(self):
-
         userinput=input('Setting up the arduino. If you restarted the arduino, unload everything and then enter 1 so it can calibrate')
         #print(type(int(userinput)))
         print(self.ser_add)
@@ -226,13 +232,15 @@ class ManualWinchApp:
         # Calibrate Arduino if needed
         line=[]
         ctr=0
-        while a.buttjpin==0:
+        t_init = time.time()
+        while time.time()<t_init+10:
 
                 try:
                         
                         line = self.ser.readline()
                         line.decode('ascii').strip()
                         print(line.decode('ascii').strip())
+                        #print(line.decode('ascii').strip().split(';'))
                         list_of_floats_temp=[]
                         #list_of_floats_temp_2=[]
                         list_of_floats_temp_1= [float(item) for item in line.decode('ascii').strip().split(';')]
@@ -240,16 +248,6 @@ class ManualWinchApp:
 
                         #list_of_floats_temp_1.extend(list_of_floats_temp_2)
                         print(list_of_floats_temp_1)
-
-
-
-                        # if len(self.list_of_floats_temp)==13:
-                        # 	list_of_floats_temp2=list_of_floats_temp
-                        # 	#print(self.list_of_floats)
-                        # 	list_of_floats_temp2[8]=180-(360-list_of_floats_temp[8])
-                        # 	list_of_floats_temp2[9]=90-list_of_floats_temp[9]
-                        # print(list_of_floats_temp2)
-
                         ctr=ctr+1
                 except:
                         pass
@@ -276,29 +274,30 @@ class ManualWinchApp:
         while time.time() < timeout_start + timeout:
                 self.get_data(0)
                 #print([	self.str1,self.str2,self.str3])
-                print([	self.str1,self.str2,self.str3, self.phi1enc,self.phi2enc,self.phi3enc])
+                print([	self.xtilt,self.ytilt,self.ztilt])
                 #print([	self.phi1enc,self.phi2enc,self.phi3enc, self.phi1deg,self.phi2deg,self.phi3deg])
                 
 
         input('If you are happy with the serial, press 1 to continue. otherwise, restart the python ')
-
+    
     def ReadSerial_cb():
         self.ReadSerial()
         self.get_data(0)
         print(self.xtilt, self.ytilt, self.ztilt)
     
     def ReadSerial(self,tosaveflag):
-
         self.ser.flushInput()
         # while (self.ser.inWaiting()<30 and self.ser2.inWaiting()<15):
         # 		pass
 
         try:
             line = self.ser.readline()
+            line.decode('ascii').strip()
             self.list_of_floats_temp=[]
             self.list_of_floats_temp = [float(item) for item in line.decode('ascii').strip().split(';')]
-
+            
             if len(self.list_of_floats_temp)==14:
+                #print("List of floats accessed.")
                 self.list_of_floats=[]
                 self.list_of_floats=self.list_of_floats_temp
 
@@ -322,9 +321,6 @@ class ManualWinchApp:
                 self.acc_cal=self.list_of_floats[12]
                 self.mag_cal=self.list_of_floats[13]
 
-
-
-                self.calculatepsi()
                 self.list_of_floats.append(self.ytilt_zero)
                 self.list_of_floats.append(self.ztilt_zero)
                 self.list_of_floats.append(self.xtilt_zero)
@@ -343,93 +339,39 @@ class ManualWinchApp:
                 self.list_of_floats.append(self.pitch)
                 self.list_of_floats.append(self.roll)
 
-
-                #append aruco stuff
-                #self.list_of_floats.extend(self.pegrvec)
-                #self.list_of_floats.extend(self.pegtvec)
-                #self.list_of_floats.extend(self.holervec)
-                #self.list_of_floats.extend(self.holetvec)
-
-                #self.getPegDepth()
-                #print(self.depth_1,self.depth_2)
-                #self.list_of_floats.append(self.phi1deg)
-                #self.list_of_floats.append(self.phi2deg)
-                #self.list_of_floats.append(self.phi3deg)
-                #self.list_of_floats.append(self.beta1deg)
-                #self.list_of_floats.append(self.beta2deg)
-                #self.list_of_floats.append(self.beta3deg)
-
-                #self.list_of_floats.append(self.depth_1)
-
                 self.winchenc1=0
                 self.winchenc2=0
                 self.winchenc3=0
 
-                if self.connectflag==1:
-                    self.winchenc1=self.odrv0.get_encoder_count(0)
-                    self.winchenc2=self.odrv1.get_encoder_count(0)
-                    self.winchenc3=self.odrv1.get_encoder_count(1)
                 self.list_of_floats.append(self.winchenc1)
                 self.list_of_floats.append(self.winchenc2)
                 self.list_of_floats.append(self.winchenc3)
-
-                self.list_of_floats.append(self.mot1spd)
-                self.list_of_floats.append(self.mot2spd)
-                self.list_of_floats.append(self.mot3spd)
-                
-
-
-
-
-                #self.phi1rad=self.phi1deg*3.14/180
-                #self.phi2rad=self.phi2deg*3.14/180
-                #self.phi3rad=self.phi3deg*3.14/180
-
-                #self.str1P=self.str1*np.cos(self.phi1rad)
-                #self.str2P=self.str2*np.cos(self.phi2rad)
-                #self.str3P=self.str3*np.cos(self.phi3rad)
-
                 
                 self.list_of_floats.insert(0,time.time())
 
-
-
-                #yrdgs.append((self.ytilt-self.ytilt_zero))
-                #zrdgs.append((self.ztilt-self.ztilt_zero))
-
-                #self.ytilta=self.avg(yrdgs)
-                #self.ztilta=self.avg(zrdgs)
-
-                #self.list_of_floats.append(self.ytilta)
-                #self.list_of_floats.append(self.ztilta)
-                if len(yrdgs)==20:
-                    yrdgs.pop(0)
-                if len(zrdgs)==20:
-                    zrdgs.pop(0)
-
-
-
-
                 if tosaveflag==1:
                     self.DataToSave()
+            else:
+                #print("List of floats not correct length.")
+                pass       
         except:
+            print("Failed to read Serial.")
             pass
     
 
     def CalibrateIMU(self):
-        self.buttjpin=0
         value=input("Calibrate the IMU. Press 1 to start.")
         t_init = time.time()
         while time.time()<t_init+3:
             self.get_data(0)
-            print(self.buttjpin,self.sys_cal,self.gyro_cal,self.acc_cal,self.mag_cal)
+            print(self.sys_cal,self.gyro_cal,self.acc_cal,self.mag_cal)
 
         self.get_data(0)
         time.sleep(2)
         input("get IMU Data. Press 1 to start.")
         self.get_data(0)
         t_init = time.time()
-        while time.time<t_init+3:
+        while time.time()<t_init+3:
             self.get_data(0)
             pitch = 180 * np.arctan2(self.accx ,np.sqrt(self.accy*self.accy+ self.accz*self.accz))/3.14;
             roll = 180 * np.arctan2(self.accy, np.sqrt(self.accx*self.accx + self.accz*self.accz))/3.14;
@@ -452,7 +394,7 @@ class ManualWinchApp:
                 self.get_data(0)
             
             input("Let the peg rest so vals can be obtained: ")
-            tInit=time.time()
+            t_init=time.time()
             accxlist=[]
             accylist=[]
             acczlist=[]
@@ -484,8 +426,8 @@ class ManualWinchApp:
             print(self.ytilt_zero,self.ztilt_zero,self.xtilt_zero,self.accx_zero,self.accy_zero,self.accz_zero)
             input("Write down ytilt_zero,ztilt_zero,xtilt_zero and accx_zero,accy_zero,accz_zero in the code for future use!!")
 
-	def avg(self,lst): 
-	    return sum(lst) / len(lst) 
+    def avg(self,lst):
+        return sum(lst) / len(lst) 
         ### SAVING AND GET DATA
 
     def SetupNewFile(self):
@@ -553,14 +495,16 @@ class ManualWinchApp:
         xtilt_thresh = 3
         ytilt_thresh = 3
         while True:
-            dz = 0.03
-            self.move_gantry(self.x, self.y, self.z+dz)
+            dz = 0.2
+            self.move_gantry(0, 0, dz)
             perp_vec = np.cross(self.rot_ax, [0,0,1])
+            print(perp_vec)
+            print(rot_ang)
             if self.rot_ang > 3:
-                self.move_gantry(self.x-perp_vec(0),self.y-perp_vec(2),self.z-perp_vec(3))
+                self.move_gantry(perp_vec(0),perp_vec(2),perp_vec(3))
             elif self.rot_ang < 3:
                 break
-        self.move_gantry(self.x,self.y,self.z+0.1)
+        self.move_gantry(0,0,dz)
 
 
     def exit_system(self):
@@ -585,5 +529,15 @@ if __name__ == '__main__':
         od1.full_init()
         print('Calibration Complete')
 
+    os.system("stty -echo")
+    rospy.init_node('can_send', anonymous=True)
+
     app = ManualWinchApp()
-    app.run()
+    app.move_gantry(0,0,0)
+    t_init = time.time()
+    while time.time() < t_init+2:
+        app.move_gantry(0.5,20,0)
+    app.move_gantry(0,0,0)
+    rospy.spin()
+    
+    #app.run()
