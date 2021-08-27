@@ -33,7 +33,7 @@ class IMU_data:
     
     def __init__(self):
 
-        self.ser_add='/dev/ttyACM3'   #For IMU/Arduino
+        self.ser_add='/dev/ttyACM0'   #For IMU/Arduino
         self.testCounter=1
 
         self.list_of_floats=[]

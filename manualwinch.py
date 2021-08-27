@@ -62,7 +62,7 @@ class ManualWinchApp:
         #4: Connect callbacks
         builder.connect_callbacks(self)
 
-        self.ser_add='/dev/ttyACM3'   #For IMU/Arduino
+        self.ser_add='/dev/ttyACM0'   #For IMU/Arduino
         self.testCounter=1
 
         self.list_of_floats=[]
@@ -149,7 +149,7 @@ class ManualWinchApp:
         odrv1.VelMove(0,1)
 
     def move_gantry(self,vx,vy,vz):
-        xSpeed = numhex64()
+        ySpeed = numhex64()
         zSpeed = numhex64()
 
         msgData1 = ""
@@ -163,16 +163,17 @@ class ManualWinchApp:
         frame2.is_rtr = False
         frame2.is_extended = False
         frame2.dlc = 8
-        xSpeed.num = vx
-        zSpeed.num = vz
+        # flip signs to convert from IMU coordinate system to that used by the gantry.
+        ySpeed.num = -vy
+        zSpeed.num = -vz
 
         # Odrive speed
-        ySpeed = vy
+        xSpeed = vx
     
         frame1.id = 0x01
         msgData1 = ""
         for idx in range(8):
-            msgData1 += chr(xSpeed.hex[idx])
+            msgData1 += chr(ySpeed.hex[idx])
         frame1.data = msgData1
         frame1.header.stamp = rospy.Time.now()
         self.pub.publish(frame1)
@@ -185,14 +186,14 @@ class ManualWinchApp:
         frame2.header.stamp = rospy.Time.now()
         self.pub.publish(frame2)
 
-        des_vel = MAX_VEL*float(ySpeed)/100
+        des_vel = MAX_VEL*float(xSpeed)/100
         odrv0.VelMove(des_vel,0)
 
-        self.vx = xSpeed.num
-        self.vy = ySpeed
-        self.vz = zSpeed.num
+        self.vx = xSpeed
+        self.vy = -ySpeed.num
+        self.vz = -zSpeed.num
 
-        rospy.loginfo("x: %f rps, z: %f rps", xSpeed.num, zSpeed.num) 
+        rospy.loginfo("y: %f rps, z: %f rps", -ySpeed.num, -zSpeed.num) 
         
         self.rate.sleep()
     
@@ -492,19 +493,24 @@ class ManualWinchApp:
 
     def ring_alignment(self):
         """ Perform the alignment of the ring and the peg using data from the IMU. """
-        xtilt_thresh = 3
-        ytilt_thresh = 3
+        rot_thresh = 3
+        self.get_data(0)
+        rot_ang = self.rot_ang
         while True:
+            self.get_data(0)
             dz = 0.2
-            self.move_gantry(0, 0, dz)
-            perp_vec = np.cross(self.rot_ax, [0,0,1])
+            #self.move_gantry(0, 0, -dz)
+            perp_vec = np.cross(self.rot_ax, [0,0,-1])
             print(perp_vec)
             print(rot_ang)
-            if self.rot_ang > 3:
-                self.move_gantry(perp_vec(0),perp_vec(2),perp_vec(3))
-            elif self.rot_ang < 3:
-                break
-        self.move_gantry(0,0,dz)
+            if abs(self.rot_ang) > rot_thresh:
+                #self.move_gantry(perp_vec(0),perp_vec(2),perp_vec(3))
+                self.move_gantry(0,0,0)
+                #print(rot_ang)
+            elif self.rot_ang < rot_thresh:
+                print(rot_ang)
+                #break
+        #self.move_gantry(0,0,-dz)
 
 
     def exit_system(self):
@@ -533,11 +539,17 @@ if __name__ == '__main__':
     rospy.init_node('can_send', anonymous=True)
 
     app = ManualWinchApp()
-    app.move_gantry(0,0,0)
-    t_init = time.time()
-    while time.time() < t_init+2:
-        app.move_gantry(0.5,20,0)
-    app.move_gantry(0,0,0)
-    rospy.spin()
+    #app.move_gantry(0,0,0)
+    #t_init = time.time()
+    #while time.time() < t_init+2:
+    #    app.move_gantry(0.5,20,0)
+    #app.move_gantry(0,0,0)
+    #rospy.spin()
+    app.ArduinoSetup()
+    #app.CalibrateIMU()
+    #app.GetIMUOffsets()
+    app.ReadSerial(0)
+    val = input("Press 1 to start ring alignment test.")
+    app.ring_alignment()
     
-    #app.run()
+    app.run()
