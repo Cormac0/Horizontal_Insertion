@@ -128,6 +128,7 @@ void PrintAllData()
   Serial.print(';');
   Serial.flush();
   Serial.print(mag_cal, DEC);
+  Serial.print('\n');
   //Serial.print(';');
   Serial.flush();
 

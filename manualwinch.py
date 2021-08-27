@@ -291,73 +291,90 @@ class ManualWinchApp:
         # while (self.ser.inWaiting()<30 and self.ser2.inWaiting()<15):
         # 		pass
 
-        try:
-            line = self.ser.readline()
-            line.decode('ascii').strip()
-            self.list_of_floats_temp=[]
-            self.list_of_floats_temp = [float(item) for item in line.decode('ascii').strip().split(';')]
+        #try:
+        line = self.ser.readline()
+        line.decode('ascii').strip()
+        self.list_of_floats_temp=[]
+        if line=='':
+            print('empty line')
+            return 0
+        if line==' ':
+            print('space line')
+            return 0
+        for item in line.decode('ascii').strip().split(';'):
+            #print(item)
+            #print('next')
+            if item == '':
+                print('empty item')
+                return 0
+            if item == ' ':
+                print('space itme')
+                return 0
+        self.list_of_floats_temp = [float(item) for item in line.decode('ascii').strip().split(';')]
+        print(self.list_of_floats_temp)
+        
+        if len(self.list_of_floats_temp)==14:
+            #print("List of floats accessed.")
+            self.list_of_floats=[]
+            self.list_of_floats=self.list_of_floats_temp
+
+            self.ytilt=self.list_of_floats[0]
+            self.ztilt=self.list_of_floats[1]
+            self.xtilt=self.list_of_floats[2]
+
+            self.qw=self.list_of_floats[3]
+            self.qx=self.list_of_floats[4]
+            self.qy=self.list_of_floats[5]
+            self.qz=self.list_of_floats[6]
+            self.q = Quaternion(self.qw,self.qx,self.qy,self.qz)
+            self.rot_ax = self.q.axis
+            self.rot_ang = self.q.degrees
+
+            self.accx=self.list_of_floats[7]
+            self.accy=self.list_of_floats[8]
+            self.accz=self.list_of_floats[9]
+            self.sys_cal=self.list_of_floats[10]
+            self.gyro_cal=self.list_of_floats[11]
+            self.acc_cal=self.list_of_floats[12]
+            self.mag_cal=self.list_of_floats[13]
+
+            self.list_of_floats.append(self.ytilt_zero)
+            self.list_of_floats.append(self.ztilt_zero)
+            self.list_of_floats.append(self.xtilt_zero)
+            self.list_of_floats.append(self.accx_zero)
+            self.list_of_floats.append(self.accx_zero)
+            self.list_of_floats.append(self.accz_zero)
+
+
+
+
+
+
+            self.pitch = 180 * np.arctan2(self.accx ,np.sqrt(self.accy*self.accy+ self.accz*self.accz))/3.14;
+            self.roll = 180 * np.arctan2(self.accy, np.sqrt(self.accx*self.accx + self.accz*self.accz))/3.14;
+
+            self.list_of_floats.append(self.pitch)
+            self.list_of_floats.append(self.roll)
+
+            self.winchenc1=0
+            self.winchenc2=0
+            self.winchenc3=0
+
+            self.list_of_floats.append(self.winchenc1)
+            self.list_of_floats.append(self.winchenc2)
+            self.list_of_floats.append(self.winchenc3)
             
-            if len(self.list_of_floats_temp)==14:
-                #print("List of floats accessed.")
-                self.list_of_floats=[]
-                self.list_of_floats=self.list_of_floats_temp
+            self.list_of_floats.insert(0,time.time())
 
-                self.ytilt=self.list_of_floats[0]
-                self.ztilt=self.list_of_floats[1]
-                self.xtilt=self.list_of_floats[2]
-
-                self.qw=self.list_of_floats[3]
-                self.qx=self.list_of_floats[4]
-                self.qy=self.list_of_floats[5]
-                self.qz=self.list_of_floats[6]
-                self.q = Quaternion(self.qw,self.qx,self.qy,self.qz)
-                self.rot_ax = self.q.axis
-                self.rot_ang = self.q.degrees
-
-                self.accx=self.list_of_floats[7]
-                self.accy=self.list_of_floats[8]
-                self.accz=self.list_of_floats[9]
-                self.sys_cal=self.list_of_floats[10]
-                self.gyro_cal=self.list_of_floats[11]
-                self.acc_cal=self.list_of_floats[12]
-                self.mag_cal=self.list_of_floats[13]
-
-                self.list_of_floats.append(self.ytilt_zero)
-                self.list_of_floats.append(self.ztilt_zero)
-                self.list_of_floats.append(self.xtilt_zero)
-                self.list_of_floats.append(self.accx_zero)
-                self.list_of_floats.append(self.accx_zero)
-                self.list_of_floats.append(self.accz_zero)
-
-
-
-
-
-
-                self.pitch = 180 * np.arctan2(self.accx ,np.sqrt(self.accy*self.accy+ self.accz*self.accz))/3.14;
-                self.roll = 180 * np.arctan2(self.accy, np.sqrt(self.accx*self.accx + self.accz*self.accz))/3.14;
-
-                self.list_of_floats.append(self.pitch)
-                self.list_of_floats.append(self.roll)
-
-                self.winchenc1=0
-                self.winchenc2=0
-                self.winchenc3=0
-
-                self.list_of_floats.append(self.winchenc1)
-                self.list_of_floats.append(self.winchenc2)
-                self.list_of_floats.append(self.winchenc3)
-                
-                self.list_of_floats.insert(0,time.time())
-
-                if tosaveflag==1:
-                    self.DataToSave()
-            else:
-                #print("List of floats not correct length.")
-                pass       
-        except:
-            print("Failed to read Serial.")
-            pass
+            if tosaveflag==1:
+                self.DataToSave()
+        else:
+            print("List of floats not correct length.")
+            print(len(self.list_of_floats_temp))
+            pass       
+        #except:
+            #print("Failed to read Serial.")
+            #pass
     
 
     def CalibrateIMU(self):
@@ -498,10 +515,12 @@ class ManualWinchApp:
         rot_ang = self.rot_ang
         while True:
             self.get_data(0)
+            rot_ang = self.rot_ang
             dz = 0.2
             #self.move_gantry(0, 0, -dz)
             perp_vec = np.cross(self.rot_ax, [0,0,-1])
-            print(perp_vec)
+            print(self.rot_ax)
+            #print(perp_vec)
             print(rot_ang)
             if abs(self.rot_ang) > rot_thresh:
                 #self.move_gantry(perp_vec(0),perp_vec(2),perp_vec(3))
