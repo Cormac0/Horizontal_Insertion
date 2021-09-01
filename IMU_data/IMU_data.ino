@@ -48,8 +48,8 @@ void loop(void)
 
   imu::Quaternion quat = bno.getQuat();
   qw=quat.w();
-  qx=quat.y();
-  qy=quat.x();
+  qx=quat.x();
+  qy=quat.y();
   qz=quat.z();
   ytilt=event.orientation.y;
   ztilt=event.orientation.z;

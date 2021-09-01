@@ -93,12 +93,12 @@ class ManualWinchApp:
         self.mag_cal=0
         
         self.accz_thresh_wedgeBreaking=0.5
-        self.ytilt_zero=-.81
-        self.ztilt_zero=2.87
-        self.xtilt_zero=0
-        self.accx_zero=--.133
-        self.accy_zero=-.5
-        self.accz_zero=10.08
+        self.ytilt_zero=1.0625
+        self.ztilt_zero=-7.3125
+        self.xtilt_zero=359.9375
+        self.accx_zero=0.342
+        self.accy_zero=2.952
+        self.accz_zero=9.318
         self.angle_Zthresh=.75
         self.angle_Ythresh=.75
         self.exitholeflag=0
@@ -149,8 +149,9 @@ class ManualWinchApp:
         odrv1.VelMove(0,1)
 
     def move_gantry(self,vx,vy,vz):
+        # INPUTS ARE IN THE FORM OF THE IMU ROT_AX COORDINATE SYSTEM
         ySpeed = numhex64()
-        zSpeed = numhex64()
+        xSpeed = numhex64()
 
         msgData1 = ""
         frame1 = msg.Frame()
@@ -164,16 +165,16 @@ class ManualWinchApp:
         frame2.is_extended = False
         frame2.dlc = 8
         # flip signs to convert from IMU coordinate system to that used by the gantry.
-        ySpeed.num = -vy
-        zSpeed.num = -vz
+        xSpeed.num = vx
+        ySpeed.num = vy
 
         # Odrive speed
-        xSpeed = vx
+        zSpeed = -vz
     
         frame1.id = 0x01
         msgData1 = ""
         for idx in range(8):
-            msgData1 += chr(ySpeed.hex[idx])
+            msgData1 += chr(xSpeed.hex[idx])
         frame1.data = msgData1
         frame1.header.stamp = rospy.Time.now()
         self.pub.publish(frame1)
@@ -181,19 +182,19 @@ class ManualWinchApp:
         frame2.id = 0x02
         msgData2 = ""
         for idx in range(8):
-            msgData2 += chr(zSpeed.hex[idx])
+            msgData2 += chr(ySpeed.hex[idx])
         frame2.data = msgData2
         frame2.header.stamp = rospy.Time.now()
         self.pub.publish(frame2)
 
-        des_vel = MAX_VEL*float(xSpeed)/100
+        des_vel = MAX_VEL*float(zSpeed)/100
         odrv0.VelMove(des_vel,0)
 
-        self.vx = xSpeed
-        self.vy = -ySpeed.num
-        self.vz = -zSpeed.num
+        self.vx = xSpeed.num
+        self.vy = ySpeed.num
+        self.vz = -zSpeed
 
-        rospy.loginfo("y: %f rps, z: %f rps", -ySpeed.num, -zSpeed.num) 
+        rospy.loginfo("x: %f rps, y: %f rps, z: %f perc", xSpeed.num, ySpeed.num, -zSpeed) 
         
         self.rate.sleep()
     
@@ -290,91 +291,91 @@ class ManualWinchApp:
         self.ser.flushInput()
         # while (self.ser.inWaiting()<30 and self.ser2.inWaiting()<15):
         # 		pass
+        while True:
+            try:
+                line = self.ser.readline()
+                line.decode('ascii').strip()
+                self.list_of_floats_temp=[]
+                if line=='':
+                    print('empty line')
+                    return 0
+                if line==' ':
+                    print('space line')
+                    return 0
+                for item in line.decode('ascii').strip().split(';'):
+                    print(item)
+                    #print('next')
+                    if item == '':
+                        print('empty item')
+                        return 0
+                    if item == ' ':
+                        print('space item')
+                        return 0
+                self.list_of_floats_temp = [float(item) for item in line.decode('ascii').strip().split(';')]
+                print(self.list_of_floats_temp)
+                
+                if len(self.list_of_floats_temp)==14:
+                    #print("List of floats accessed.")
+                    self.list_of_floats=[]
+                    self.list_of_floats=self.list_of_floats_temp
 
-        #try:
-        line = self.ser.readline()
-        line.decode('ascii').strip()
-        self.list_of_floats_temp=[]
-        if line=='':
-            print('empty line')
-            return 0
-        if line==' ':
-            print('space line')
-            return 0
-        for item in line.decode('ascii').strip().split(';'):
-            #print(item)
-            #print('next')
-            if item == '':
-                print('empty item')
-                return 0
-            if item == ' ':
-                print('space itme')
-                return 0
-        self.list_of_floats_temp = [float(item) for item in line.decode('ascii').strip().split(';')]
-        print(self.list_of_floats_temp)
-        
-        if len(self.list_of_floats_temp)==14:
-            #print("List of floats accessed.")
-            self.list_of_floats=[]
-            self.list_of_floats=self.list_of_floats_temp
+                    self.ytilt=self.list_of_floats[0]
+                    self.ztilt=self.list_of_floats[1]
+                    self.xtilt=self.list_of_floats[2]
 
-            self.ytilt=self.list_of_floats[0]
-            self.ztilt=self.list_of_floats[1]
-            self.xtilt=self.list_of_floats[2]
+                    self.qw=self.list_of_floats[3]
+                    self.qx=self.list_of_floats[4]
+                    self.qy=self.list_of_floats[5]
+                    self.qz=self.list_of_floats[6]
+                    self.q = Quaternion(self.qw,self.qx,self.qy,self.qz)
+                    self.rot_ax = self.q.axis
+                    self.rot_ang = self.q.degrees
 
-            self.qw=self.list_of_floats[3]
-            self.qx=self.list_of_floats[4]
-            self.qy=self.list_of_floats[5]
-            self.qz=self.list_of_floats[6]
-            self.q = Quaternion(self.qw,self.qx,self.qy,self.qz)
-            self.rot_ax = self.q.axis
-            self.rot_ang = self.q.degrees
+                    self.accx=self.list_of_floats[7]
+                    self.accy=self.list_of_floats[8]
+                    self.accz=self.list_of_floats[9]
+                    self.sys_cal=self.list_of_floats[10]
+                    self.gyro_cal=self.list_of_floats[11]
+                    self.acc_cal=self.list_of_floats[12]
+                    self.mag_cal=self.list_of_floats[13]
 
-            self.accx=self.list_of_floats[7]
-            self.accy=self.list_of_floats[8]
-            self.accz=self.list_of_floats[9]
-            self.sys_cal=self.list_of_floats[10]
-            self.gyro_cal=self.list_of_floats[11]
-            self.acc_cal=self.list_of_floats[12]
-            self.mag_cal=self.list_of_floats[13]
-
-            self.list_of_floats.append(self.ytilt_zero)
-            self.list_of_floats.append(self.ztilt_zero)
-            self.list_of_floats.append(self.xtilt_zero)
-            self.list_of_floats.append(self.accx_zero)
-            self.list_of_floats.append(self.accx_zero)
-            self.list_of_floats.append(self.accz_zero)
-
-
+                    self.list_of_floats.append(self.ytilt_zero)
+                    self.list_of_floats.append(self.ztilt_zero)
+                    self.list_of_floats.append(self.xtilt_zero)
+                    self.list_of_floats.append(self.accx_zero)
+                    self.list_of_floats.append(self.accx_zero)
+                    self.list_of_floats.append(self.accz_zero)
 
 
 
 
-            self.pitch = 180 * np.arctan2(self.accx ,np.sqrt(self.accy*self.accy+ self.accz*self.accz))/3.14;
-            self.roll = 180 * np.arctan2(self.accy, np.sqrt(self.accx*self.accx + self.accz*self.accz))/3.14;
 
-            self.list_of_floats.append(self.pitch)
-            self.list_of_floats.append(self.roll)
 
-            self.winchenc1=0
-            self.winchenc2=0
-            self.winchenc3=0
+                    self.pitch = 180 * np.arctan2(self.accx ,np.sqrt(self.accy*self.accy+ self.accz*self.accz))/3.14;
+                    self.roll = 180 * np.arctan2(self.accy, np.sqrt(self.accx*self.accx + self.accz*self.accz))/3.14;
 
-            self.list_of_floats.append(self.winchenc1)
-            self.list_of_floats.append(self.winchenc2)
-            self.list_of_floats.append(self.winchenc3)
-            
-            self.list_of_floats.insert(0,time.time())
+                    self.list_of_floats.append(self.pitch)
+                    self.list_of_floats.append(self.roll)
 
-            if tosaveflag==1:
-                self.DataToSave()
-        else:
-            print("List of floats not correct length.")
-            print(len(self.list_of_floats_temp))
-            pass       
-        #except:
-            #print("Failed to read Serial.")
-            #pass
+                    self.winchenc1=0
+                    self.winchenc2=0
+                    self.winchenc3=0
+
+                    self.list_of_floats.append(self.winchenc1)
+                    self.list_of_floats.append(self.winchenc2)
+                    self.list_of_floats.append(self.winchenc3)
+                    
+                    self.list_of_floats.insert(0,time.time())
+
+                    if tosaveflag==1:
+                        self.DataToSave()
+                else:
+                    print("List of floats not correct length.")
+                    print(len(self.list_of_floats_temp))
+                    pass
+                break       
+            except ValueError:
+                print("Value error. Trying again...")
     
 
     def CalibrateIMU(self):
@@ -510,26 +511,36 @@ class ManualWinchApp:
 
     def ring_alignment(self):
         """ Perform the alignment of the ring and the peg using data from the IMU. """
-        rot_thresh = 3
+        rot_thresh = 6
         self.get_data(0)
         rot_ang = self.rot_ang
+        t_last_correction = time.time()
         while True:
             self.get_data(0)
             rot_ang = self.rot_ang
-            dz = 0.2
-            #self.move_gantry(0, 0, -dz)
-            perp_vec = np.cross(self.rot_ax, [0,0,-1])
+            dx = 1
+            self.move_gantry(dx, 0, 0)
+            perp_vec = np.cross(self.rot_ax, [1,0,0])
             print(self.rot_ax)
-            #print(perp_vec)
+            print(perp_vec)
             print(rot_ang)
-            if abs(self.rot_ang) > rot_thresh:
-                #self.move_gantry(perp_vec(0),perp_vec(2),perp_vec(3))
-                self.move_gantry(0,0,0)
-                #print(rot_ang)
-            elif self.rot_ang < rot_thresh:
+            time.sleep(1)
+            if abs(self.rot_ang) > rot_thresh and (abs(self.ytilt)>3 or abs(self.xtilt)>3):
+                if self.rot_ang > 0:
+                    self.move_gantry(-dx,perp_vec[1]*3,perp_vec[2]*3)
+                    t_last_correction = time.time()
+                    time.sleep(1)
+                    #self.move_gantry(0,0,0)
+                    #print(rot_ang)
+                elif self.rot_ang < 0:
+                    pass
+            else:
                 print(rot_ang)
-                #break
-        #self.move_gantry(0,0,-dz)
+                self.move_gantry(dx,0,0)
+                if time.time()-t_last_correction>10:
+                    break
+        self.move_gantry(0,0,0)
+        print('Insertion complete.')
 
 
     def exit_system(self):
@@ -564,11 +575,11 @@ if __name__ == '__main__':
     #    app.move_gantry(0.5,20,0)
     #app.move_gantry(0,0,0)
     #rospy.spin()
-    #app.ArduinoSetup()
-    #app.CalibrateIMU()
-    #app.GetIMUOffsets()
-    #app.ReadSerial(0)
-    #val = input("Press 1 to start ring alignment test.")
-    #app.ring_alignment()
+    app.ArduinoSetup()
+    app.CalibrateIMU()
+    app.GetIMUOffsets()
+    app.ReadSerial(0)
+    val = input("Press 1 to start ring alignment test.")
+    app.ring_alignment()
     
     app.run()
