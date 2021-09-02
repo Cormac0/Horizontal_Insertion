@@ -54,6 +54,10 @@ void loop(void)
   ytilt=event.orientation.y;
   ztilt=event.orientation.z;
   xtilt=event.orientation.x;
+  if(xtilt>180)
+  {
+    xtilt = xtilt-360;
+  }
 
   imu::Vector<3> accvec=bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
   accx=accvec.x();

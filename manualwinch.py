@@ -93,12 +93,12 @@ class ManualWinchApp:
         self.mag_cal=0
         
         self.accz_thresh_wedgeBreaking=0.5
-        self.ytilt_zero=1.0625
-        self.ztilt_zero=-7.3125
-        self.xtilt_zero=359.9375
-        self.accx_zero=0.342
-        self.accy_zero=2.952
-        self.accz_zero=9.318
+        self.ytilt_zero=1.3125
+        self.ztilt_zero=-3.6
+        self.xtilt_zero=10.48
+        self.accx_zero=0.218
+        self.accy_zero=-0.098
+        self.accz_zero=9.444
         self.angle_Zthresh=.75
         self.angle_Ythresh=.75
         self.exitholeflag=0
@@ -322,6 +322,13 @@ class ManualWinchApp:
                     self.ytilt=self.list_of_floats[0]
                     self.ztilt=self.list_of_floats[1]
                     self.xtilt=self.list_of_floats[2]
+                    # Ensure range is from (-180,180]
+                    if self.ytilt>180:
+                        self.ytilt = self.ytilt-360
+                    if self.xtilt>180:
+                        self.xtilt = self.xtilt-360
+                    if self.ztilt>180:
+                        self.ztilt = self.ztilt-360
 
                     self.qw=self.list_of_floats[3]
                     self.qx=self.list_of_floats[4]
@@ -524,12 +531,24 @@ class ManualWinchApp:
             print(self.rot_ax)
             print(perp_vec)
             print(rot_ang)
-            time.sleep(1)
+            time.sleep(1.5)
+            self.move_gantry(0,0,0)
+            time.sleep(2)
             if abs(self.rot_ang) > rot_thresh and (abs(self.ytilt)>3 or abs(self.xtilt)>3):
                 if self.rot_ang > 0:
-                    self.move_gantry(-dx,perp_vec[1]*3,perp_vec[2]*3)
+                    vy = 0
+                    vz = 0
+                    if self.ytilt<-2:
+                        vz = -abs(perp_vec[2])
+                    elif self.ytilt>2:
+                        vz = abs(perp_vec[2])
+                    if self.xtilt<-2:
+                        vy = abs(perp_vec[1])
+                    elif self.xtilt>2:
+                        vy = -abs(perp_vec[1])
+                    self.move_gantry(-dx,vy*3,vz*3)
                     t_last_correction = time.time()
-                    time.sleep(1)
+                    time.sleep(1.5)
                     #self.move_gantry(0,0,0)
                     #print(rot_ang)
                 elif self.rot_ang < 0:
@@ -537,7 +556,8 @@ class ManualWinchApp:
             else:
                 print(rot_ang)
                 self.move_gantry(dx,0,0)
-                if time.time()-t_last_correction>10:
+                time.sleep(1)
+                if time.time()-t_last_correction>30:
                     break
         self.move_gantry(0,0,0)
         print('Insertion complete.')
