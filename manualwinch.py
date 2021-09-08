@@ -62,7 +62,7 @@ class ManualWinchApp:
         #4: Connect callbacks
         builder.connect_callbacks(self)
 
-        self.ser_add='/dev/ttyACM0'   #For IMU/Arduino
+        self.ser_add='/dev/ttyACM2'   #For IMU/Arduino
         self.testCounter=1
 
         self.list_of_floats=[]
@@ -516,8 +516,20 @@ class ManualWinchApp:
         #self.ReadDisplayCVApril(tosaveflag)
         self.ReadSerial(tosaveflag)
 
+    def pause(self,curr_data, duration):
+        t_init = time.time()
+        while time.time() < t_init+duration:
+            t_init_2 = time.time()
+            temp_data = []
+            while time.time() < t_init_2 + 0.4:
+                temp_data.append(odrv0.get_current(0))
+            curr_data.append(np.mean(temp_data))
+        return curr_data
+
     def ring_alignment(self):
         """ Perform the alignment of the ring and the peg using data from the IMU. """
+        graph_data_arr = []
+
         rot_thresh = 6
         self.get_data(0)
         rot_ang = self.rot_ang
@@ -531,9 +543,11 @@ class ManualWinchApp:
             print(self.rot_ax)
             print(perp_vec)
             print(rot_ang)
-            time.sleep(1.5)
+            #time.sleep(1.5)
+            self.pause(graph_data_arr,1.5)
             self.move_gantry(0,0,0)
-            time.sleep(2)
+            #time.sleep(2)
+            self.pause(graph_data_arr,2)
             if abs(self.rot_ang) > rot_thresh and (abs(self.ytilt)>3 or abs(self.xtilt)>3):
                 if self.rot_ang > 0:
                     vy = 0
@@ -548,7 +562,8 @@ class ManualWinchApp:
                         vy = -abs(perp_vec[1])
                     self.move_gantry(-dx,vy*3,vz*3)
                     t_last_correction = time.time()
-                    time.sleep(1.5)
+                    #time.sleep(1.5)
+                    self.pause(graph_data_arr,1.5)
                     #self.move_gantry(0,0,0)
                     #print(rot_ang)
                 elif self.rot_ang < 0:
@@ -556,16 +571,63 @@ class ManualWinchApp:
             else:
                 print(rot_ang)
                 self.move_gantry(dx,0,0)
-                time.sleep(1)
+                #time.sleep(1)
+                self.pause(graph_data_arr,1)
                 if time.time()-t_last_correction>30:
                     break
         self.move_gantry(0,0,0)
         print('Insertion complete.')
+         # Parameters
+        y_range = [-3,1]
+
+        # Create figure for plotting
+        fig = plt.figure()
+        #ax.set_ylim(y_range)
+
+        plt.plot(graph_data_arr)
+
+        plt.title('Current over Time')
+        plt.xlabel('Samples')
+        plt.ylabel('Current (A)')
+        plt.show()
 
 
     def exit_system(self):
             os.system("stty echo")
             sys.exit()
+
+    def animate(i, ys, odrv1):
+        time_end = time.time()+0.2
+        graph_data_arr = []
+        graph_data_arr.append(odrv1.get_current(0))
+        while time.time() < time_end:
+            graph_data_arr.append(odrv1.get_current(0))
+        graph_data = np.mean(graph_data_arr)
+
+        # Add x and y to lists
+        #xs.append(dt.datetime.now().strftime('%H:%M:%S.%f'))
+        #xs.append(i)
+        ys.append(graph_data)
+
+        # Limit x and y lists to 20 items
+        #xs = xs[-20:]
+        #ys = ys[-20:]
+        ys = ys[-x_len:]
+        
+        # Format plot
+        #ax.clear()
+        #ax.plot(xs,ys)
+
+        # Update line with new Y values
+        line.set_ydata(ys)
+
+        return line,
+
+        # Format plot
+        #plt.xticks(rotation=45, ha='right')
+        #plt.subplots_adjust(bottom=0.30)
+        #plt.title('Current over Time')
+        #plt.ylabel('Current (A)')
 
 
 

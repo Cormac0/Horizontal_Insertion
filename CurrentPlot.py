@@ -9,12 +9,12 @@ from OdriveClass import *
 # Note that positive velocity values lower winch 1
 MAX_VEL = 100000 # Max. speed for winch in encoder counts per second
 
-def animate(i, ys, odrv1):
-    time_end = time.time()+0.2
+def animate(i, ys, odrv):
+    time_end = time.time()+0.4
     graph_data_arr = []
-    graph_data_arr.append(odrv1.get_current(0))
+    graph_data_arr.append(odrv0.get_current(0))
     while time.time() < time_end:
-        graph_data_arr.append(odrv1.get_current(0))
+        graph_data_arr.append(odrv0.get_current(0))
     graph_data = np.mean(graph_data_arr)
 
     # Add x and y to lists
