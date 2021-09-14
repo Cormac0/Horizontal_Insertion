@@ -62,7 +62,7 @@ class ManualWinchApp:
         #4: Connect callbacks
         builder.connect_callbacks(self)
 
-        self.ser_add='/dev/ttyACM2'   #For IMU/Arduino
+        self.ser_add='/dev/ttyACM1'   #For IMU/Arduino
         self.testCounter=1
 
         self.list_of_floats=[]
@@ -93,12 +93,12 @@ class ManualWinchApp:
         self.mag_cal=0
         
         self.accz_thresh_wedgeBreaking=0.5
-        self.ytilt_zero=1.3125
-        self.ztilt_zero=-3.6
-        self.xtilt_zero=10.48
-        self.accx_zero=0.218
-        self.accy_zero=-0.098
-        self.accz_zero=9.444
+        self.ytilt_zero=1.6875
+        self.ztilt_zero=1.1875
+        self.xtilt_zero=0.0
+        self.accx_zero=0.278
+        self.accy_zero=-0.188
+        self.accz_zero=9.438
         self.angle_Zthresh=.75
         self.angle_Ythresh=.75
         self.exitholeflag=0
