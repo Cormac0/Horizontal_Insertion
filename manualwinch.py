@@ -94,11 +94,11 @@ class ManualWinchApp:
         
         self.accz_thresh_wedgeBreaking=0.5
         self.ytilt_zero=1.6875
-        self.ztilt_zero=1.1875
-        self.xtilt_zero=0.0
-        self.accx_zero=0.278
-        self.accy_zero=-0.188
-        self.accz_zero=9.438
+        self.ztilt_zero=-0.4375
+        self.xtilt_zero=-3.2
+        self.accx_zero=0.34
+        self.accy_zero=0.0280
+        self.accz_zero=9.43
         self.angle_Zthresh=.75
         self.angle_Ythresh=.75
         self.exitholeflag=0
@@ -516,25 +516,70 @@ class ManualWinchApp:
         #self.ReadDisplayCVApril(tosaveflag)
         self.ReadSerial(tosaveflag)
 
-    def pause(self,curr_data, duration):
+    def pause(self,time_arr,curr_data,xtilt_data,ytilt_data, duration):
         t_init = time.time()
         while time.time() < t_init+duration:
             t_init_2 = time.time()
             temp_data = []
+            temp_data1 = []
+            temp_data2 = []
             while time.time() < t_init_2 + 0.4:
-                temp_data.append(odrv0.get_current(0))
+                self.get_data(1)
+                temp_data.append(self.rot_ang)
+                temp_data1.append(self.xtilt)
+                temp_data2.append(self.ytilt)
+                #temp_data1.append(self.rot_ax[1])
+                #temp_data2.append(self.rot_ax[2])
             curr_data.append(np.mean(temp_data))
+            time_arr.append(t_init+(duration/2))
+            xtilt_data.append(np.mean(temp_data1))
+            ytilt_data.append(np.mean(temp_data2))
+        return curr_data
+
+    def nopause(self,time_arr,curr_data,xtilt_data,ytilt_data, duration):
+        t_init = time.time()
+        while time.time() < t_init+duration:
+            t_init_2 = time.time()
+            temp_data = []
+            temp_data1 = []
+            temp_data2 = []
+            while time.time() < t_init_2 + 0.2:
+                self.get_data(1)
+                temp_data.append(self.rot_ang)
+                temp_data1.append(self.xtilt)
+                temp_data2.append(self.ytilt)
+                #temp_data1.append(self.rot_ax[1])
+                #temp_data2.append(self.rot_ax[2])
+            curr_data.append(np.mean(temp_data))
+            time_arr.append(t_init+(duration/2))
+            xtilt_data.append(np.mean(temp_data1))
+            ytilt_data.append(np.mean(temp_data2))
         return curr_data
 
     def ring_alignment(self):
         """ Perform the alignment of the ring and the peg using data from the IMU. """
         graph_data_arr = []
+        graph_time_arr = []
+        graph_xtilt_arr = []
+        graph_ytilt_arr = []
 
         rot_thresh = 6
         self.get_data(0)
+        t_init0 = time.time()
+        while abs(self.ytilt)<8:
+            self.get_data(0)
+            self.move_gantry(1,0,0)
+            self.nopause(graph_time_arr,graph_data_arr,graph_xtilt_arr,graph_ytilt_arr,0.5)
+            if time.time()-t_init0 > 10:
+                break
+        self.move_gantry(1,0,0)
         rot_ang = self.rot_ang
         t_last_correction = time.time()
         while True:
+            #break
+            if time.time()-t_init0>180:
+                print("Abort")
+                break
             self.get_data(0)
             rot_ang = self.rot_ang
             dx = 1
@@ -544,11 +589,12 @@ class ManualWinchApp:
             print(perp_vec)
             print(rot_ang)
             #time.sleep(1.5)
-            self.pause(graph_data_arr,1.5)
+            self.pause(graph_time_arr,graph_data_arr,graph_xtilt_arr,graph_ytilt_arr,1.5)
             self.move_gantry(0,0,0)
             #time.sleep(2)
-            self.pause(graph_data_arr,2)
-            if abs(self.rot_ang) > rot_thresh and (abs(self.ytilt)>3 or abs(self.xtilt)>3):
+            self.pause(graph_time_arr,graph_data_arr,graph_xtilt_arr,graph_ytilt_arr,2)
+            #if abs(self.rot_ang) > rot_thresh and (abs(self.ytilt)>3 or abs(self.xtilt)>3):
+            if (abs(self.ytilt)>6 or abs(self.xtilt)>6):
                 if self.rot_ang > 0:
                     vy = 0
                     vz = 0
@@ -563,7 +609,7 @@ class ManualWinchApp:
                     self.move_gantry(-dx,vy*3,vz*3)
                     t_last_correction = time.time()
                     #time.sleep(1.5)
-                    self.pause(graph_data_arr,1.5)
+                    self.pause(graph_time_arr,graph_data_arr,graph_xtilt_arr,graph_ytilt_arr,1.5)
                     #self.move_gantry(0,0,0)
                     #print(rot_ang)
                 elif self.rot_ang < 0:
@@ -572,7 +618,7 @@ class ManualWinchApp:
                 print(rot_ang)
                 self.move_gantry(dx,0,0)
                 #time.sleep(1)
-                self.pause(graph_data_arr,1)
+                self.pause(graph_time_arr,graph_data_arr,graph_xtilt_arr,graph_ytilt_arr,1)
                 if time.time()-t_last_correction>30:
                     break
         self.move_gantry(0,0,0)
@@ -583,12 +629,22 @@ class ManualWinchApp:
         # Create figure for plotting
         fig = plt.figure()
         #ax.set_ylim(y_range)
+        graph_time_arr = [t - t_init0 for t in graph_time_arr]
 
-        plt.plot(graph_data_arr)
+        filename = "angle_data.csv"
+        with open(filename, "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(graph_time_arr)
+            writer.writerow(graph_data_arr)
+            writer.writerow(graph_xtilt_arr)
+            writer.writerow(graph_ytilt_arr)
+            print("saved")
 
-        plt.title('Current over Time')
-        plt.xlabel('Samples')
-        plt.ylabel('Current (A)')
+        plt.plot(graph_time_arr,graph_data_arr)
+
+        plt.title('IMU Data')
+        plt.xlabel('Time')
+        plt.ylabel('Angle')
         plt.show()
 
 
